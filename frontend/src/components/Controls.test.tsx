@@ -4,12 +4,13 @@ import userEvent from '@testing-library/user-event';
 import { Controls } from './Controls';
 
 describe('Controls', () => {
-  it('renders all 4 buttons by accessible name', () => {
+  it('renders all 5 buttons by accessible name', () => {
     render(
       <Controls
         onNewNormal={vi.fn()}
         onNewVip={vi.fn()}
         onAddBot={vi.fn()}
+        onAddFastBot={vi.fn()}
         onDelBot={vi.fn()}
       />,
     );
@@ -17,6 +18,7 @@ describe('Controls', () => {
     expect(screen.getByRole('button', { name: 'New Normal Order' })).toBeDefined();
     expect(screen.getByRole('button', { name: 'New VIP Order' })).toBeDefined();
     expect(screen.getByRole('button', { name: '+ Bot' })).toBeDefined();
+    expect(screen.getByRole('button', { name: '+ Fast Bot' })).toBeDefined();
     expect(screen.getByRole('button', { name: '- Bot' })).toBeDefined();
   });
 
@@ -29,6 +31,7 @@ describe('Controls', () => {
         onNewNormal={onNewNormal}
         onNewVip={vi.fn()}
         onAddBot={vi.fn()}
+        onAddFastBot={vi.fn()}
         onDelBot={vi.fn()}
       />,
     );
@@ -46,6 +49,7 @@ describe('Controls', () => {
         onNewNormal={vi.fn()}
         onNewVip={onNewVip}
         onAddBot={vi.fn()}
+        onAddFastBot={vi.fn()}
         onDelBot={vi.fn()}
       />,
     );
@@ -63,12 +67,31 @@ describe('Controls', () => {
         onNewNormal={vi.fn()}
         onNewVip={vi.fn()}
         onAddBot={onAddBot}
+        onAddFastBot={vi.fn()}
         onDelBot={vi.fn()}
       />,
     );
 
     await user.click(screen.getByRole('button', { name: '+ Bot' }));
     expect(onAddBot).toHaveBeenCalledOnce();
+  });
+
+  it('calls onAddFastBot exactly once when "+ Fast Bot" is clicked', async () => {
+    const user = userEvent.setup();
+    const onAddFastBot = vi.fn();
+
+    render(
+      <Controls
+        onNewNormal={vi.fn()}
+        onNewVip={vi.fn()}
+        onAddBot={vi.fn()}
+        onAddFastBot={onAddFastBot}
+        onDelBot={vi.fn()}
+      />,
+    );
+
+    await user.click(screen.getByRole('button', { name: '+ Fast Bot' }));
+    expect(onAddFastBot).toHaveBeenCalledOnce();
   });
 
   it('calls onDelBot exactly once when "- Bot" is clicked', async () => {
@@ -80,6 +103,7 @@ describe('Controls', () => {
         onNewNormal={vi.fn()}
         onNewVip={vi.fn()}
         onAddBot={vi.fn()}
+        onAddFastBot={vi.fn()}
         onDelBot={onDelBot}
       />,
     );

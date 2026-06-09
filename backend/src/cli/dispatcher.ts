@@ -1,5 +1,5 @@
 import { OrderController } from '../domain/order-controller';
-import { OrderType } from '../domain/types';
+import { OrderType, BotType } from '../domain/types';
 import { BotNotFoundError } from '../domain/errors';
 
 function flag(tokens: string[], name: string): string | undefined {
@@ -16,6 +16,13 @@ function parseType(v: string | undefined): OrderType {
   return up;
 }
 
+function parseBotType(v: string | undefined): BotType {
+  if (v === undefined) return 'NORMAL';
+  const up = v.toUpperCase();
+  if (up !== 'NORMAL' && up !== 'FAST') throw new Error(`invalid --type "${v}" (normal|fast)`);
+  return up;
+}
+
 export function runCommand(ctrl: OrderController, line: string): string {
   const tokens = line.trim().split(/\s+/);
   const cmd = tokens[0] ?? '';
@@ -27,8 +34,8 @@ export function runCommand(ctrl: OrderController, line: string): string {
         return `Created ${o.type} order #${o.id}`;
       }
       case 'add-bot': {
-        const b = ctrl.addBot();
-        return `Created bot #${b.id}`;
+        const b = ctrl.addBot(parseBotType(flag(rest, 'type')));
+        return `Created ${b.type} bot #${b.id}`;
       }
       case 'del-bot': {
         const idStr = flag(rest, 'id');
@@ -50,7 +57,7 @@ export function runCommand(ctrl: OrderController, line: string): string {
       case 'status':
         return JSON.stringify(ctrl.snapshot());
       case 'help':
-        return 'add-order [--type normal|vip] | add-bot | del-bot [--id N] | list-orders [--type normal|vip] | list-bots | status | exit';
+        return 'add-order [--type normal|vip] | add-bot [--type normal|fast] | del-bot [--id N] | list-orders [--type normal|vip] | list-bots | status | exit';
       case 'exit':
         return '__EXIT__';
       case '':

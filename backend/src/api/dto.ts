@@ -1,6 +1,6 @@
 import { IsIn, IsOptional } from 'class-validator';
 import { Transform } from 'class-transformer';
-import type { OrderType } from '../contracts';
+import type { OrderType, BotType } from '../contracts';
 
 export class CreateOrderDto {
   @IsOptional()
@@ -18,4 +18,13 @@ export class OrderTypeQuery {
   )
   @IsIn(['NORMAL', 'VIP'])
   type?: OrderType;
+}
+
+export class CreateBotDto {
+  @IsOptional()
+  @Transform(({ value }: { value: unknown }) =>
+    typeof value === 'string' ? value.toUpperCase() : value,
+  )
+  @IsIn(['NORMAL', 'FAST'])
+  type?: BotType;
 }

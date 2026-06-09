@@ -1,6 +1,7 @@
 export type OrderType = 'NORMAL' | 'VIP';
 export type OrderStatus = 'PENDING' | 'PROCESSING' | 'COMPLETE';
 export type BotStatus = 'IDLE' | 'PROCESSING';
+export type BotType = 'NORMAL' | 'FAST';
 
 export interface OrderDTO {
   id: number;
@@ -13,7 +14,9 @@ export interface OrderDTO {
 
 export interface BotDTO {
   id: number;
+  type: BotType;
   status: BotStatus;
+  cookDurationMs: number;
   currentOrderId: number | null;
 }
 
@@ -22,9 +25,12 @@ export interface StatusDTO {
   processing: { order: OrderDTO; botId: number }[];
   complete: OrderDTO[];
   bots: BotDTO[];
-  cookDurationMs: number;
 }
 
 export interface CreateOrderBody {
   type?: OrderType;
+}
+
+export interface CreateBotBody {
+  type?: BotType;
 }

@@ -14,7 +14,13 @@ export function serializeOrder(order: Order): OrderDTO {
 }
 
 export function serializeBot(bot: Bot): BotDTO {
-  return { id: bot.id, status: bot.status, currentOrderId: bot.currentOrderId };
+  return {
+    id: bot.id,
+    type: bot.type,
+    status: bot.status,
+    cookDurationMs: bot.cookMs,
+    currentOrderId: bot.currentOrderId,
+  };
 }
 
 export function serializeSnapshot(snap: StatusSnapshot): StatusDTO {
@@ -26,6 +32,5 @@ export function serializeSnapshot(snap: StatusSnapshot): StatusDTO {
     })),
     complete: snap.complete.map(serializeOrder),
     bots: snap.bots.map(serializeBot),
-    cookDurationMs: snap.cookMs,
   };
 }

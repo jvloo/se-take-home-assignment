@@ -143,3 +143,31 @@ test('del-bot --id with non-numeric value returns must-be-a-number and removes n
   expect(out).toMatch(/must be a number/i);
   expect(ctrl.listBots().map((b) => b.id)).toEqual([1]);
 });
+
+test('add-bot --type fast creates a FAST bot and reports its type', () => {
+  const { ctrl } = make();
+  const out = runCommand(ctrl, 'add-bot --type fast');
+  expect(out).toMatch(/FAST/);
+  expect(out).toMatch(/#1/);
+  expect(ctrl.listBots()[0]!.type).toBe('FAST');
+});
+
+test('add-bot with no type defaults to a NORMAL bot', () => {
+  const { ctrl } = make();
+  const out = runCommand(ctrl, 'add-bot');
+  expect(out).toMatch(/NORMAL/);
+  expect(ctrl.listBots()[0]!.type).toBe('NORMAL');
+});
+
+test('add-bot --type with an invalid value returns an error and creates no bot', () => {
+  const { ctrl } = make();
+  const out = runCommand(ctrl, 'add-bot --type bogus');
+  expect(out).toMatch(/error|invalid/i);
+  expect(ctrl.listBots()).toEqual([]);
+});
+
+test('add-bot accepts type case-insensitively', () => {
+  const { ctrl } = make();
+  runCommand(ctrl, 'add-bot --type FAST');
+  expect(ctrl.listBots()[0]!.type).toBe('FAST');
+});

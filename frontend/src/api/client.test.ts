@@ -42,13 +42,30 @@ describe('api/client', () => {
   // ---------------------------------------------------------------------------
   // addBot
   // ---------------------------------------------------------------------------
-  it('addBot() POSTs /api/bots', async () => {
+  it('addBot("NORMAL") POSTs /api/bots with body { type: "NORMAL" }', async () => {
     mockFetch(true, 200);
 
-    await addBot();
+    await addBot('NORMAL');
 
     expect(fetch).toHaveBeenCalledOnce();
-    expect(fetch).toHaveBeenCalledWith('/api/bots', { method: 'POST' });
+    expect(fetch).toHaveBeenCalledWith('/api/bots', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ type: 'NORMAL' }),
+    });
+  });
+
+  it('addBot("FAST") POSTs /api/bots with body { type: "FAST" }', async () => {
+    mockFetch(true, 200);
+
+    await addBot('FAST');
+
+    expect(fetch).toHaveBeenCalledOnce();
+    expect(fetch).toHaveBeenCalledWith('/api/bots', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ type: 'FAST' }),
+    });
   });
 
   // ---------------------------------------------------------------------------

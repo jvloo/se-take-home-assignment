@@ -49,8 +49,9 @@ function makeSnapshot(): StatusDTO {
       },
     ],
     complete: [{ id: 1003, type: 'NORMAL', status: 'COMPLETE', createdAt: '2026-01-01T00:00:00.000Z', completedAt: '2026-01-01T00:01:00.000Z' }],
-    bots: [{ id: 1, status: 'PROCESSING', currentOrderId: 1002 }],
-    cookDurationMs: 10_000,
+    bots: [
+      { id: 1, type: 'NORMAL', status: 'PROCESSING', cookDurationMs: 10_000, currentOrderId: 1002 },
+    ],
   };
 }
 
@@ -127,6 +128,20 @@ describe('App integration', () => {
     );
   });
 
+  it('calls fetch POST /api/bots with FAST body on "+ Fast Bot" click', async () => {
+    render(<App eventSourceFactory={() => fake} />);
+    act(() => { fake.open(); });
+    act(() => { fake.emit(JSON.stringify(makeSnapshot())); });
+
+    await screen.findByText('VIP Order #1001');
+    await userEvent.setup().click(screen.getByRole('button', { name: '+ Fast Bot' }));
+
+    expect(vi.mocked(fetch)).toHaveBeenCalledWith(
+      '/api/bots',
+      expect.objectContaining({ method: 'POST', body: JSON.stringify({ type: 'FAST' }) }),
+    );
+  });
+
   it('shows "Reconnecting…" indicator after connection failure', async () => {
     render(<App eventSourceFactory={() => fake} />);
     act(() => { fake.open(); });
@@ -149,7 +164,6 @@ describe('App integration', () => {
       processing: [],
       complete: [{ id: 1003, type: 'NORMAL', status: 'COMPLETE', createdAt: '2026-01-01T00:00:00.000Z', completedAt: '2026-01-01T00:01:00.000Z' }],
       bots: [],
-      cookDurationMs: 10_000,
     };
     act(() => { fake.emit(JSON.stringify(second)); });
 

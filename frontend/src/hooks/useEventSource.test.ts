@@ -44,8 +44,7 @@ function makeStatus(cookDurationMs: number): StatusDTO {
     pending: [],
     processing: [],
     complete: [],
-    bots: [],
-    cookDurationMs,
+    bots: [{ id: 1, type: 'NORMAL', status: 'IDLE', cookDurationMs, currentOrderId: null }],
   };
 }
 
@@ -96,7 +95,7 @@ describe('useEventSource', () => {
     const second = makeStatus(20_000);
     act(() => { fake.emit(JSON.stringify(second)); });
     expect(result.current.snapshot).toEqual(second);
-    expect(result.current.snapshot?.cookDurationMs).toBe(20_000);
+    expect(result.current.snapshot?.bots[0]?.cookDurationMs).toBe(20_000);
   });
 
   it('transitions to reconnecting on error', () => {

@@ -72,6 +72,27 @@ describe('Bots API (e2e)', () => {
     expect(body.status).toBe('IDLE');
   });
 
+  it('POST /api/bots with { type: "fast" } → 201 with FAST type and a 5s cook duration', async () => {
+    const res = await request(app.getHttpServer())
+      .post('/api/bots')
+      .send({ type: 'fast' })
+      .expect(201);
+    const body = res.body as BotDTO;
+    expect(body.type).toBe('FAST');
+    expect(body.cookDurationMs).toBe(5000);
+  });
+
+  it('POST /api/bots with no body defaults to a NORMAL bot (10s cook duration)', async () => {
+    const res = await request(app.getHttpServer()).post('/api/bots').expect(201);
+    const body = res.body as BotDTO;
+    expect(body.type).toBe('NORMAL');
+    expect(body.cookDurationMs).toBe(10000);
+  });
+
+  it('POST /api/bots with an invalid type → 400', async () => {
+    await request(app.getHttpServer()).post('/api/bots').send({ type: 'bogus' }).expect(400);
+  });
+
   it('DELETE /api/bots/:id with unknown id → 404', async () => {
     await request(app.getHttpServer()).delete('/api/bots/9999').expect(404);
   });
@@ -116,7 +137,6 @@ describe('Status API (e2e)', () => {
     expect(Array.isArray(body.processing)).toBe(true);
     expect(Array.isArray(body.complete)).toBe(true);
     expect(Array.isArray(body.bots)).toBe(true);
-    expect(body.cookDurationMs).toBe(10000);
   });
 
   it('GET /api/health → 200 with { status: ok }', async () => {

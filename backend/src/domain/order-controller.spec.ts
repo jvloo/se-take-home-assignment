@@ -151,3 +151,38 @@ test('removeBot of a non-newest specific id requeues only its order, leaving oth
   expect(snap.processing[0]!.botId).toBe(2);
   expect(ctrl.listBots().map((b) => b.id)).toEqual([2]); // bot #1 gone
 });
+
+test('a FAST bot completes its order in 5s', () => {
+  const c = new FakeClock();
+  const ctrl = new OrderController(c, c);
+  ctrl.addOrder('NORMAL'); // #1001
+  ctrl.addBot('FAST'); // bot #1 (FAST) takes #1001
+  c.advance(5_000);
+  expect(ctrl.snapshot().complete.map((o) => o.id)).toContain(1001);
+});
+
+test('a NORMAL bot is still cooking at 5s and completes at 10s', () => {
+  const c = new FakeClock();
+  const ctrl = new OrderController(c, c);
+  ctrl.addOrder('NORMAL'); // #1001
+  ctrl.addBot('NORMAL'); // bot #1 (NORMAL) takes #1001
+  c.advance(5_000);
+  expect(ctrl.snapshot().complete.map((o) => o.id)).not.toContain(1001);
+  c.advance(5_000);
+  expect(ctrl.snapshot().complete.map((o) => o.id)).toContain(1001);
+});
+
+test('addBot defaults to NORMAL and reports its type', () => {
+  const c = new FakeClock();
+  const ctrl = new OrderController(c, c);
+  expect(ctrl.addBot().type).toBe('NORMAL');
+});
+
+test('snapshot exposes each bot type and cook duration', () => {
+  const c = new FakeClock();
+  const ctrl = new OrderController(c, c);
+  ctrl.addBot('FAST');
+  const bot = ctrl.snapshot().bots[0]!;
+  expect(bot.type).toBe('FAST');
+  expect(bot.cookMs).toBe(5_000);
+});

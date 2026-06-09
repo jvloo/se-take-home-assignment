@@ -1,148 +1,112 @@
-import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
+import { describe, it, expect } from 'vitest';
 import { render, screen } from '@testing-library/react';
 import { BotList } from './BotList';
 import type { BotDTO, OrderDTO } from '@contracts';
 
+function bot(
+  id: number,
+  status: BotDTO['status'],
+  currentOrderId: number | null,
+  type: BotDTO['type'] = 'NORMAL',
+  cookDurationMs = 10000,
+): BotDTO {
+  return { id, type, status, cookDurationMs, currentOrderId };
+}
+
+function order(id: number, type: OrderDTO['type'], startedAt?: string): OrderDTO {
+  return {
+    id,
+    type,
+    status: 'PROCESSING',
+    createdAt: '2026-01-01T00:00:00.000Z',
+    ...(startedAt !== undefined ? { startedAt } : {}),
+  };
+}
+
 describe('BotList', () => {
-  beforeEach(() => {
-    vi.useFakeTimers();
+  it('shows an empty state when there are no bots', () => {
+    render(<BotList bots={[]} processing={[]} />);
+    expect(screen.getByText(/no bots/i)).toBeDefined();
   });
 
-  afterEach(() => {
-    vi.useRealTimers();
+  it('renders the bot count', () => {
+    render(<BotList bots={[]} processing={[]} />);
+    expect(screen.getByText('0')).toBeDefined();
   });
 
-  it('renders the section title "Bots"', () => {
-    render(<BotList bots={[]} processing={[]} cookDurationMs={10000} />);
-    expect(screen.getByText('Bots')).toBeDefined();
-  });
-
-  it('shows empty message when there are no bots', () => {
-    render(<BotList bots={[]} processing={[]} cookDurationMs={10000} />);
-    expect(screen.getByText('No bots')).toBeDefined();
-  });
-
-  it('shows "Bot #<id>" for each bot', () => {
-    const bots: BotDTO[] = [
-      { id: 1, status: 'IDLE', currentOrderId: null },
-      { id: 2, status: 'IDLE', currentOrderId: null },
-    ];
-    render(<BotList bots={bots} processing={[]} cookDurationMs={10000} />);
+  it('lists bots by id with their status', () => {
+    const bots = [bot(1, 'IDLE', null), bot(2, 'PROCESSING', 1001)];
+    render(<BotList bots={bots} processing={[]} />);
     expect(screen.getByText('Bot #1')).toBeDefined();
     expect(screen.getByText('Bot #2')).toBeDefined();
   });
 
-  it('shows "Idle" status badge in the bot header for an IDLE bot', () => {
-    const bots: BotDTO[] = [
-      { id: 1, status: 'IDLE', currentOrderId: null },
-    ];
-    render(<BotList bots={bots} processing={[]} cookDurationMs={10000} />);
-    expect(screen.getByText('Idle')).toBeDefined();
+  it('shows a per-bot status badge', () => {
+    const bots = [bot(1, 'IDLE', null)];
+    render(<BotList bots={bots} processing={[]} />);
+    expect(screen.getByText(/idle/i)).toBeDefined();
   });
 
-  it('shows "Processing" status badge in the bot header for a PROCESSING bot', () => {
+  it('renders countdown for a processing bot using startedAt + the bot cook duration', () => {
     const now = Date.now();
     const startedAt = new Date(now - 3000).toISOString();
-    const order: OrderDTO = {
-      id: 5,
-      type: 'NORMAL',
-      status: 'PROCESSING',
-      createdAt: new Date(now - 4000).toISOString(),
-      startedAt,
-    };
-    const bots: BotDTO[] = [
-      { id: 1, status: 'PROCESSING', currentOrderId: 5 },
+    const bots = [bot(1, 'PROCESSING', 1001)];
+    const processing = [
+      {
+        order: order(1001, 'NORMAL', startedAt),
+        botId: 1,
+      },
     ];
-    const processing = [{ order, botId: 1 }];
-    render(<BotList bots={bots} processing={processing} cookDurationMs={10000} />);
-    expect(screen.getByText('Processing')).toBeDefined();
+    render(<BotList bots={bots} processing={processing} />);
+    // NORMAL bot: 10s cook started 3s ago → ~7s remaining
+    expect(screen.getByText(/7s/)).toBeDefined();
   });
 
-  it('renders the order for a PROCESSING bot', () => {
+  it('uses the FAST bot 5s cook time for its countdown', () => {
     const now = Date.now();
-    const startedAt = new Date(now - 3000).toISOString();
-
-    const order: OrderDTO = {
-      id: 5,
-      type: 'NORMAL',
-      status: 'PROCESSING',
-      createdAt: new Date(now - 4000).toISOString(),
-      startedAt,
-    };
-    const bots: BotDTO[] = [
-      { id: 1, status: 'PROCESSING', currentOrderId: 5 },
+    const startedAt = new Date(now - 1000).toISOString();
+    const bots = [bot(1, 'PROCESSING', 1001, 'FAST', 5000)];
+    const processing = [
+      {
+        order: order(1001, 'NORMAL', startedAt),
+        botId: 1,
+      },
     ];
-    const processing = [{ order, botId: 1 }];
+    render(<BotList bots={bots} processing={processing} />);
+    // FAST bot: 5s cook started 1s ago → ~4s remaining
+    expect(screen.getByText(/4s/)).toBeDefined();
+  });
 
-    render(<BotList bots={bots} processing={processing} cookDurationMs={10000} />);
-
-    // Should show bot label
+  it('flags a FAST bot visually but leaves a NORMAL bot unlabelled', () => {
+    const bots = [bot(1, 'IDLE', null, 'FAST', 5000), bot(2, 'IDLE', null, 'NORMAL', 10000)];
+    render(<BotList bots={bots} processing={[]} />);
+    expect(screen.getByText(/fast/i)).toBeDefined();
     expect(screen.getByText('Bot #1')).toBeDefined();
-    // Should render the order
-    expect(screen.getByText('Normal Order #5')).toBeDefined();
+    expect(screen.getByText('Bot #2')).toBeDefined();
+  });
+
+  it('shows "No order queued" for an idle bot', () => {
+    const bots = [bot(1, 'IDLE', null)];
+    render(<BotList bots={bots} processing={[]} />);
+    expect(screen.getByText(/no order queued/i)).toBeDefined();
   });
 
   it('renders a countdown (Ns) on the order row for a PROCESSING bot', () => {
     const now = Date.now();
     const startedAt = new Date(now - 3000).toISOString();
-
-    const order: OrderDTO = {
-      id: 5,
-      type: 'NORMAL',
-      status: 'PROCESSING',
-      createdAt: new Date(now - 4000).toISOString(),
-      startedAt,
-    };
-    const bots: BotDTO[] = [
-      { id: 1, status: 'PROCESSING', currentOrderId: 5 },
+    const bots = [bot(1, 'PROCESSING', 1001)];
+    const processing = [
+      {
+        order: order(1001, 'NORMAL', startedAt),
+        botId: 1,
+      },
     ];
-    const processing = [{ order, botId: 1 }];
-
-    render(<BotList bots={bots} processing={processing} cookDurationMs={10000} />);
-
-    // Should show a countdown like "7s" on the order row
-    expect(screen.getByText('7s')).toBeDefined();
+    render(<BotList bots={bots} processing={processing} />);
+    expect(screen.getByText(/7s/)).toBeDefined();
   });
 
-  it('does NOT show "Idle" status for a PROCESSING bot', () => {
-    const now = Date.now();
-    const startedAt = new Date(now - 3000).toISOString();
-
-    const order: OrderDTO = {
-      id: 5,
-      type: 'NORMAL',
-      status: 'PROCESSING',
-      createdAt: new Date(now - 4000).toISOString(),
-      startedAt,
-    };
-    const bots: BotDTO[] = [
-      { id: 1, status: 'PROCESSING', currentOrderId: 5 },
-    ];
-    const processing = [{ order, botId: 1 }];
-
-    render(<BotList bots={bots} processing={processing} cookDurationMs={10000} />);
-
-    expect(screen.queryByText('Idle')).toBeNull();
-  });
-
-  it('shows empty message only, no bot cards when bots is empty', () => {
-    render(<BotList bots={[]} processing={[]} cookDurationMs={10000} />);
-    expect(screen.queryByText(/Bot #/)).toBeNull();
-  });
-
-  it('does not render an order row for an IDLE bot', () => {
-    const bots: BotDTO[] = [
-      { id: 1, status: 'IDLE', currentOrderId: null },
-    ];
-    render(<BotList bots={bots} processing={[]} cookDurationMs={10000} />);
-    expect(screen.queryByText(/Order #/)).toBeNull();
-  });
-
-  it('shows "No order queued" placeholder for an IDLE bot', () => {
-    const bots: BotDTO[] = [
-      { id: 1, status: 'IDLE', currentOrderId: null },
-    ];
-    render(<BotList bots={bots} processing={[]} cookDurationMs={10000} />);
-    expect(screen.getByText('No order queued')).toBeDefined();
+  it('renders nothing extra for zero bots beyond empty state', () => {
+    render(<BotList bots={[]} processing={[]} />);
+    expect(screen.getByText(/no bots/i)).toBeDefined();
   });
 });

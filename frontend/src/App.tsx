@@ -36,7 +36,11 @@ export default function App({ eventSourceFactory }: AppProps): React.ReactElemen
   }
 
   function handleAddBot(): void {
-    addBot().catch((err: unknown) => console.error(err));
+    addBot('NORMAL').catch((err: unknown) => console.error(err));
+  }
+
+  function handleAddFastBot(): void {
+    addBot('FAST').catch((err: unknown) => console.error(err));
   }
 
   function handleDelBot(): void {
@@ -68,6 +72,7 @@ export default function App({ eventSourceFactory }: AppProps): React.ReactElemen
               onNewNormal={handleNewNormal}
               onNewVip={handleNewVip}
               onAddBot={handleAddBot}
+              onAddFastBot={handleAddFastBot}
               onDelBot={handleDelBot}
             />
           </div>
@@ -78,7 +83,6 @@ export default function App({ eventSourceFactory }: AppProps): React.ReactElemen
             <BotList
               bots={snapshot.bots}
               processing={snapshot.processing}
-              cookDurationMs={snapshot.cookDurationMs}
             />
             <CompleteList orders={snapshot.complete} />
           </div>

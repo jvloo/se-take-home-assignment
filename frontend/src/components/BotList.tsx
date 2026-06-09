@@ -6,10 +6,9 @@ import { StatusBadge } from './StatusBadge';
 interface BotListProps {
   bots: BotDTO[];
   processing: { order: OrderDTO; botId: number }[];
-  cookDurationMs: number;
 }
 
-export function BotList({ bots, processing, cookDurationMs }: BotListProps): React.ReactElement {
+export function BotList({ bots, processing }: BotListProps): React.ReactElement {
   return (
     <section className="h-full flex flex-col min-h-0 bg-base-100 rounded-box shadow-sm">
       <h2 className="text-sm font-bold uppercase tracking-wide px-4 pt-4 pb-2 border-b border-base-300 shrink-0">
@@ -25,11 +24,21 @@ export function BotList({ bots, processing, cookDurationMs }: BotListProps): Rea
                 bot.status === 'PROCESSING'
                   ? (processing.find((p) => p.botId === bot.id) ?? null)
                   : null;
+              const isFast = bot.type === 'FAST';
 
               return (
                 <div key={bot.id} className="card bg-base-200 shadow-xs p-3">
                   <div className="flex justify-between items-center mb-1">
-                    <span className="font-semibold text-sm text-gray-500">Bot #{bot.id}</span>
+                    <div className="flex items-center gap-1">
+                      <span
+                        className={`font-semibold text-sm ${isFast ? 'text-amber-600' : 'text-gray-500'}`}
+                      >
+                        Bot #{bot.id}
+                      </span>
+                      {isFast ? (
+                        <span className="badge badge-warning badge-xs gap-0.5">⚡ FAST</span>
+                      ) : null}
+                    </div>
                     <StatusBadge status={bot.status} />
                   </div>
                   {entry !== null ? (
@@ -38,7 +47,7 @@ export function BotList({ bots, processing, cookDurationMs }: BotListProps): Rea
                       trailing={
                         <Countdown
                           startedAt={entry.order.startedAt!}
-                          cookDurationMs={cookDurationMs}
+                          cookDurationMs={bot.cookDurationMs}
                         />
                       }
                     />

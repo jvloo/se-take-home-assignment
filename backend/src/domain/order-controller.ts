@@ -1,10 +1,17 @@
 import { Clock, Scheduler } from './time';
-import { Order, Bot, OrderType, DomainEvent, StatusSnapshot } from './types';
+import { Order, Bot, BotType, OrderType, DomainEvent, StatusSnapshot } from './types';
 import { compareOrders } from './priority';
 import { BotNotFoundError } from './errors';
 
 export const DEFAULT_COOK_MS = 10_000;
+export const FAST_COOK_MS = 5_000;
 export const INITIAL_ORDER_ID = 1001;
+
+/** Cook-time policy: each bot type's cook duration. Single source of truth. */
+export const DEFAULT_COOK_MS_BY_TYPE: Record<BotType, number> = {
+  NORMAL: DEFAULT_COOK_MS,
+  FAST: FAST_COOK_MS,
+};
 
 export class OrderController {
   private orders: Order[] = [];
@@ -17,7 +24,7 @@ export class OrderController {
   constructor(
     private readonly clock: Clock,
     private readonly scheduler: Scheduler,
-    private readonly cookMs: number = DEFAULT_COOK_MS,
+    private readonly cookMsByType: Record<BotType, number> = DEFAULT_COOK_MS_BY_TYPE,
   ) {}
 
   addOrder(type: OrderType = 'NORMAL'): Order {
@@ -33,8 +40,14 @@ export class OrderController {
     return order;
   }
 
-  addBot(): Bot {
-    const bot: Bot = { id: this.nextBotId++, status: 'IDLE', currentOrderId: null };
+  addBot(type: BotType = 'NORMAL'): Bot {
+    const bot: Bot = {
+      id: this.nextBotId++,
+      type,
+      status: 'IDLE',
+      cookMs: this.cookMsByType[type],
+      currentOrderId: null,
+    };
     this.bots.push(bot);
     this.emit({ type: 'BotAdded', botId: bot.id, at: this.clock.now() });
     this.tryAssign();
@@ -92,7 +105,7 @@ export class OrderController {
         botId: b.id,
       }));
     const complete = this.orders.filter((o) => o.status === 'COMPLETE').map((o) => ({ ...o }));
-    return { pending, processing, complete, bots: [...this.bots], cookMs: this.cookMs };
+    return { pending, processing, complete, bots: [...this.bots] };
   }
 
   subscribe(listener: (e: DomainEvent) => void): () => void {
@@ -114,7 +127,7 @@ export class OrderController {
       bot.status = 'PROCESSING';
       bot.currentOrderId = next.id;
       this.emit({ type: 'OrderStarted', order: { ...next }, botId: bot.id, at: this.clock.now() });
-      const cancel = this.scheduler.schedule(this.cookMs, () => this.complete(bot.id, next.id));
+      const cancel = this.scheduler.schedule(bot.cookMs, () => this.complete(bot.id, next.id));
       this.timers.set(bot.id, cancel);
     }
   }

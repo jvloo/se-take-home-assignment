@@ -4,6 +4,7 @@ import {
   Get,
   Delete,
   Param,
+  Body,
   HttpCode,
   HttpStatus,
   UseFilters,
@@ -12,6 +13,7 @@ import {
 import { OrderController } from '../domain/order-controller';
 import { serializeBot } from './serialize';
 import { BotNotFoundFilter } from './not-found.filter';
+import { CreateBotDto } from './dto';
 import type { BotDTO } from '../contracts';
 
 @Controller('bots')
@@ -21,8 +23,8 @@ export class BotsController {
 
   @Post()
   @HttpCode(HttpStatus.CREATED)
-  addBot(): BotDTO {
-    return serializeBot(this.domain.addBot());
+  addBot(@Body() body: CreateBotDto): BotDTO {
+    return serializeBot(this.domain.addBot(body.type));
   }
 
   @Get()

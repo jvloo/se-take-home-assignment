@@ -1,6 +1,7 @@
 export type OrderType = 'NORMAL' | 'VIP';
 export type OrderStatus = 'PENDING' | 'PROCESSING' | 'COMPLETE';
 export type BotStatus = 'IDLE' | 'PROCESSING';
+export type BotType = 'NORMAL' | 'FAST';
 
 export interface Order {
   id: number;
@@ -12,7 +13,9 @@ export interface Order {
 }
 export interface Bot {
   id: number;
+  type: BotType;
   status: BotStatus;
+  cookMs: number; // resolved cook duration for this bot (depends on its type)
   currentOrderId: number | null;
 }
 
@@ -30,5 +33,4 @@ export interface StatusSnapshot {
   processing: { order: Order; botId: number }[];
   complete: Order[];
   bots: Bot[];
-  cookMs: number;
 }

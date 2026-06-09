@@ -2,6 +2,7 @@ interface ControlsProps {
   onNewNormal: () => void;
   onNewVip: () => void;
   onAddBot: () => void;
+  onAddFastBot: () => void;
   onDelBot: () => void;
 }
 
@@ -9,6 +10,7 @@ export function Controls({
   onNewNormal,
   onNewVip,
   onAddBot,
+  onAddFastBot,
   onDelBot,
 }: ControlsProps): React.ReactElement {
   return (
@@ -30,6 +32,12 @@ export function Controls({
         onClick={onAddBot}
       >
         + Bot
+      </button>
+      <button
+        className="btn btn-success btn-outline"
+        onClick={onAddFastBot}
+      >
+        + Fast Bot
       </button>
       <button
         className="btn btn-error"
